@@ -1,0 +1,65 @@
+version: "3.9"
+services:
+  db:
+    image: postgis/postgis:latest
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    expose:
+      - ${DB_HOST}
+    environment:
+      - POSTGRES_DB=${DB_DATABASE}
+      - POSTGRES_USER=${DB_USERNAME}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    env_file:
+      - ./.env
+  redis:
+    image: redis:latest
+    expose:
+      - 6379
+  backend:
+    build: ./backend
+    command: uvicorn main:app  --host 0.0.0.0 --port 8000
+    volumes:
+      - ./backend:/backend_app
+    ports:
+      - 8001:8000
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://${DB_USERNAME}:${DB_PASSWORD}@db:${DB_HOST}/${DB_DATABASE}
+    env_file:
+      - ./.env
+    depends_on:
+      - db
+      - redis
+  worker:
+    build: ./backend
+    command: celery -A tasks.cars_task worker -l info
+    env_file:
+      - ./.env
+    depends_on:
+      - backend
+  beat:
+    build: ./backend
+    command: celery -A tasks.cars_task beat -l info
+    env_file:
+      - ./.env
+    depends_on:
+      - backend
+  frontend:
+    build: ./frontend
+    ports:
+      - 3001:3000
+    env_file:
+      - ./.env
+    depends_on:
+      - backend
+  nginx:
+    image: nginx:alpine
+    ports:
+      - 8083:8080
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - backend
+      - frontend
+volumes:
+  postgres_data:
