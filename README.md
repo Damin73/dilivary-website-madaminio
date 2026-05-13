@@ -47,7 +47,4 @@ flowchart LR
 - Backend на FastAPI
 - Frontend на ReactJS
 
-### License
-Copyright © 2023 [dsuhoi](https://github.com/dsuhoi).
-
-This project is [MIT](https://github.com/dsuhoi/delivery-service/blob/main/LICENSE) licensed.
+Сделанно Мухаммадамином в 2026 году 
